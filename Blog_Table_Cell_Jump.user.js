@@ -1,0 +1,104 @@
+// ==UserScript==
+// @name        Blog Table ⭐ Cell Jump
+// @namespace        http://tampermonkey.net/
+// @version        0.1
+// @description        「⇧」「⇩」キーで「table」内のキャレットのセル移動を可能にする
+// @author        Ameba Blog User
+// @match        https://blog.ameba.jp/ucs/entry/srventry*
+// @exclude        https://blog.ameba.jp/ucs/entry/srventrylist.do*
+// @icon        https://www.google.com/s2/favicons?sz=64&domain=ameblo.jp
+// @grant        none
+// @updateURL        https://github.com/personwritep/Blog_Table_Cell_Jump/raw/main/Blog_Table_Cell_Jump.user.js
+// @downloadURL        https://github.com/personwritep/Blog_Table_Cell_Jump/raw/main/Blog_Table_Cell_Jump.user.js
+// ==/UserScript==
+
+
+let target=document.getElementById('cke_1_contents'); // 監視 target
+let monitor=new MutationObserver( catch_key );
+monitor.observe(target, {childList: true, attributes: true}); // キー操作待受け開始
+
+catch_key();
+
+function catch_key(){
+    if(document.querySelector('.cke_wysiwyg_frame')!=null){ //「通常表示」から実行開始
+        let editor_iframe=document.querySelector('.cke_wysiwyg_frame');
+        let iframe_doc=editor_iframe.contentWindow.document;
+
+
+        iframe_doc.addEventListener('keydown', function(event){
+            if(event.keyCode==38){
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                go(0); }
+            if(event.keyCode==40){
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                go(1); }});
+
+
+
+        function go(n){
+            let table=iframe_doc.querySelector('table[id*="ambt"]');
+            if(table){
+                let td_all=table.querySelectorAll('td');
+                let col=table.querySelector('tr').querySelectorAll('td').length;
+
+                let now_point=get_now_pos();
+
+                let el;
+                if(n==0){
+                    el=td_all[now_point - col]; }
+                else{
+                    el=td_all[now_point + col]; }
+                if(el){
+                    let selection=iframe_doc.getSelection();
+                    let range=selection.getRangeAt(0);
+                    range.setStart(el, 0);
+
+                    range.collapse(true); // trueで先頭
+                    selection.removeAllRanges();
+                    selection.addRange(range); }
+            }
+        } // go(n)
+
+
+
+        function get_now_pos(){
+            let table=iframe_doc.querySelector('table[id*="ambt"]');
+            if(table){
+                let point=get_td();
+                if(point){
+                    let now_tdp;
+                    let now_trp;
+
+                    let tr_p=point.closest('tr');
+                    let tr_p_td=tr_p.querySelectorAll('td');
+                    for(let k=0; k<tr_p_td.length; k++){
+                        if(tr_p_td[k]==point){
+                            now_tdp=k; break; }}
+
+                    let tr_all=table.querySelectorAll('tr');
+                    for(let k=0; k<tr_all.length; k++){
+                        if(tr_all[k]==tr_p){
+                            now_trp=k; break; }}
+
+                    return tr_p_td.length*now_trp + now_tdp; }
+
+
+                function get_td(){
+                    let selection=iframe_doc.getSelection();
+                    let range=selection.getRangeAt(0);
+                    let ac_node=selection.anchorNode;
+                    if(ac_node){
+                        let point=ac_node.parentElement.closest('td');
+                        if(!point){
+                            point=ac_node; }
+
+                        selection.removeAllRanges();
+                        selection.addRange(range);
+                        return point; }}}
+
+        } // get_now_pos()
+
+    }
+} // catch_key()
