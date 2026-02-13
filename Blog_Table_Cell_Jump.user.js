@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        Blog Table ⭐ Cell Jump
 // @namespace        http://tampermonkey.net/
-// @version        0.1
+// @version        0.2
 // @description        「⇧」「⇩」キーで「table」内のキャレットのセル移動を可能にする
 // @author        Ameba Blog User
 // @match        https://blog.ameba.jp/ucs/entry/srventry*
@@ -26,79 +26,87 @@ function catch_key(){
 
 
         iframe_doc.addEventListener('keydown', function(event){
-            if(event.keyCode==38){
-                event.preventDefault();
-                event.stopImmediatePropagation();
-                go(0); }
-            if(event.keyCode==40){
-                event.preventDefault();
-                event.stopImmediatePropagation();
-                go(1); }});
+            if(!(event.ctrlKey || event.shiftKey || event.altKey || event.metaKey)){
+                let table=is_table();
+                if(table){
+                    if(event.keyCode==38){
+                        event.preventDefault();
+                        event.stopImmediatePropagation();
+                        go(table, 0); }
+                    if(event.keyCode==40){
+                        event.preventDefault();
+                        event.stopImmediatePropagation();
+                        go(table, 1); }}}});
+
+
+        function is_table(){
+            let selection=iframe_doc.getSelection();
+            if(selection.rangeCount>0){
+                let range=selection.getRangeAt(0);
+                let ac_node=selection.anchorNode;
+                if(ac_node){
+                    let table_elm=ac_node.parentElement.closest('table[id*="ambt"]'); // 🟥🟥
+                    if(table_elm){
+                        return table_elm; }}}}
 
 
 
-        function go(n){
-            let table=iframe_doc.querySelector('table[id*="ambt"]');
-            if(table){
-                let td_all=table.querySelectorAll('td');
-                let col=table.querySelector('tr').querySelectorAll('td').length;
+        function go(table, n){
+            let td_all=table.querySelectorAll('td');
+            let col=table.querySelector('tr').querySelectorAll('td').length;
 
-                let now_point=get_now_pos();
+            let now_point=get_now_pos(table);
 
-                let el;
-                if(n==0){
-                    el=td_all[now_point - col]; }
-                else{
-                    el=td_all[now_point + col]; }
-                if(el){
-                    let selection=iframe_doc.getSelection();
+            let el;
+            if(n==0){
+                el=td_all[now_point - col]; }
+            else{
+                el=td_all[now_point + col]; }
+            if(el){
+                let selection=iframe_doc.getSelection();
+                if(selection.rangeCount>0){
                     let range=selection.getRangeAt(0);
-                    range.setStart(el, 0);
+                    range.setStart(el, 1); // (el, 0) ：tdの先頭　(el, 1) ：tdの末尾
+                    range.collapse(true); }} // trueで先頭側に閉じる必要あり
 
-                    range.collapse(true); // trueで先頭
-                    selection.removeAllRanges();
-                    selection.addRange(range); }
-            }
         } // go(n)
 
 
 
-        function get_now_pos(){
-            let table=iframe_doc.querySelector('table[id*="ambt"]');
-            if(table){
-                let point=get_td();
-                if(point){
-                    let now_tdp;
-                    let now_trp;
+        function get_now_pos(table){
+            let point=get_td();
+            if(point){
+                let now_tdp;
+                let now_trp;
 
-                    let tr_p=point.closest('tr');
-                    let tr_p_td=tr_p.querySelectorAll('td');
-                    for(let k=0; k<tr_p_td.length; k++){
-                        if(tr_p_td[k]==point){
-                            now_tdp=k; break; }}
+                let tr_p=point.closest('tr');
+                let tr_p_td=tr_p.querySelectorAll('td');
+                for(let k=0; k<tr_p_td.length; k++){
+                    if(tr_p_td[k]==point){
+                        now_tdp=k; break; }}
 
-                    let tr_all=table.querySelectorAll('tr');
-                    for(let k=0; k<tr_all.length; k++){
-                        if(tr_all[k]==tr_p){
-                            now_trp=k; break; }}
+                let tr_all=table.querySelectorAll('tr');
+                for(let k=0; k<tr_all.length; k++){
+                    if(tr_all[k]==tr_p){
+                        now_trp=k; break; }}
 
-                    return tr_p_td.length*now_trp + now_tdp; }
+                return tr_p_td.length*now_trp + now_tdp; }
 
 
-                function get_td(){
-                    let selection=iframe_doc.getSelection();
+            function get_td(){
+                let selection=iframe_doc.getSelection();
+                if(selection.rangeCount>0){
+                    let point;
                     let range=selection.getRangeAt(0);
-                    let ac_node=selection.anchorNode;
-                    if(ac_node){
-                        let point=ac_node.parentElement.closest('td');
-                        if(!point){
-                            point=ac_node; }
+                    let container=range.startContainer;
+                    if(container.nodeType==1){
+                        point=container.closest('td'); }
+                    else{
+                        point=container.parentElement.closest('td'); }
 
-                        selection.removeAllRanges();
-                        selection.addRange(range);
-                        return point; }}}
+                    return point; }}
 
-        } // get_now_pos()
+        } // get_now_pos(table)
 
     }
 } // catch_key()
