@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        Blog Table ⭐ Cell Jump
 // @namespace        http://tampermonkey.net/
-// @version        0.2
+// @version        0.3
 // @description        「⇧」「⇩」キーで「table」内のキャレットのセル移動を可能にする
 // @author        Ameba Blog User
 // @match        https://blog.ameba.jp/ucs/entry/srventry*
@@ -63,11 +63,12 @@ function catch_key(){
             else{
                 el=td_all[now_point + col]; }
             if(el){
-                let selection=iframe_doc.getSelection();
-                if(selection.rangeCount>0){
-                    let range=selection.getRangeAt(0);
-                    range.setStart(el, 1); // (el, 0) ：tdの先頭　(el, 1) ：tdの末尾
-                    range.collapse(true); }} // trueで先頭側に閉じる必要あり
+                let selction=iframe_doc.getSelection();
+                let range=iframe_doc.createRange();
+                range.selectNodeContents(el);
+                range.collapse(false); // true: 先頭, false: 末尾
+                selction.removeAllRanges();
+                selction.addRange(range); }
 
         } // go(n)
 
