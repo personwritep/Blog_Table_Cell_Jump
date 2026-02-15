@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        Blog Table ⭐ Cell Jump
 // @namespace        http://tampermonkey.net/
-// @version        0.3
+// @version        0.4
 // @description        「⇧」「⇩」キーで「table」内のキャレットのセル移動を可能にする
 // @author        Ameba Blog User
 // @match        https://blog.ameba.jp/ucs/entry/srventry*
@@ -11,6 +11,9 @@
 // @updateURL        https://github.com/personwritep/Blog_Table_Cell_Jump/raw/main/Blog_Table_Cell_Jump.user.js
 // @downloadURL        https://github.com/personwritep/Blog_Table_Cell_Jump/raw/main/Blog_Table_Cell_Jump.user.js
 // ==/UserScript==
+
+
+let cursor=0; //「0」:セルの末尾　「1」:セルの先頭
 
 
 let target=document.getElementById('cke_1_contents'); // 監視 target
@@ -29,14 +32,18 @@ function catch_key(){
             if(!(event.ctrlKey || event.shiftKey || event.altKey || event.metaKey)){
                 let table=is_table();
                 if(table){
-                    if(event.keyCode==38){
+                    if(event.keyCode==38){ //「⇧」
                         event.preventDefault();
                         event.stopImmediatePropagation();
                         go(table, 0); }
-                    if(event.keyCode==40){
+                    if(event.keyCode==40){ //「⇩」
                         event.preventDefault();
                         event.stopImmediatePropagation();
-                        go(table, 1); }}}});
+                        go(table, 1); }}
+
+                is_locked();
+
+            }});
 
 
         function is_table(){
@@ -49,6 +56,13 @@ function catch_key(){
                     if(table_elm){
                         return table_elm; }}}}
 
+
+        function is_locked(){
+            let locked=event.getModifierState('ScrollLock');
+            if(locked){
+                cursor=1; }
+            else{
+                cursor=0; }}
 
 
         function go(table, n){
@@ -66,7 +80,10 @@ function catch_key(){
                 let selction=iframe_doc.getSelection();
                 let range=iframe_doc.createRange();
                 range.selectNodeContents(el);
-                range.collapse(false); // true: 先頭, false: 末尾
+                if(cursor==0){
+                    range.collapse(false); } // false: 移動後のキャレット位置 セル末尾
+                else{
+                    range.collapse(true); } // true: 移動後のキャレット位置 セル先頭
                 selction.removeAllRanges();
                 selction.addRange(range); }
 
