@@ -1,11 +1,11 @@
 // ==UserScript==
 // @name        Blog Table ⭐ Cell Jump
 // @namespace        http://tampermonkey.net/
-// @version        0.4
+// @version        0.5
 // @description        「⇧」「⇩」キーで「table」内のキャレットのセル移動を可能にする
 // @author        Ameba Blog User
-// @match        https://blog.ameba.jp/ucs/entry/srventry*
-// @exclude        https://blog.ameba.jp/ucs/entry/srventrylist.do*
+// @match        https://blog.ameba.jp/ucs/entry/srventryinsertinput.do*
+// @match        https://blog.ameba.jp/ucs/entry/srventryupdateinput.do*
 // @icon        https://www.google.com/s2/favicons?sz=64&domain=ameblo.jp
 // @grant        none
 // @updateURL        https://github.com/personwritep/Blog_Table_Cell_Jump/raw/main/Blog_Table_Cell_Jump.user.js
