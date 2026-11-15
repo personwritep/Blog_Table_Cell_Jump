@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name        Blog Table ⭐ Cell Jump  🟥✳️
+// @name        Blog Table ⭐ Cell Jump
 // @namespace        http://tampermonkey.net/
 // @version        0.6
 // @description        「⇧」「⇩」キーで「table」内のキャレットのセル移動を可能にする
