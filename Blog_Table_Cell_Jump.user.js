@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name        Blog Table ⭐ Cell Jump
+// @name        Blog Table ⭐ Cell Jump  🟥✳️
 // @namespace        http://tampermonkey.net/
 // @version        0.6
 // @description        「⇧」「⇩」キーで「table」内のキャレットのセル移動を可能にする
@@ -78,7 +78,7 @@ function catch_key(){
                 let range=selection.getRangeAt(0);
                 let ac_node=selection.anchorNode;
                 if(ac_node){
-                    let table_elm=ac_node.parentElement.closest('table[id*="ambt"]'); // 🟥🟥
+                    let table_elm=ac_node.parentElement.closest('table');
                     if(table_elm){
                         return table_elm; }}}}
 
