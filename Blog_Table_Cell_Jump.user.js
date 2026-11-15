@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        Blog Table ⭐ Cell Jump
 // @namespace        http://tampermonkey.net/
-// @version        0.5
+// @version        0.6
 // @description        「⇧」「⇩」キーで「table」内のキャレットのセル移動を可能にする
 // @author        Ameba Blog User
 // @match        https://blog.ameba.jp/ucs/entry/srventryinsertinput.do*
@@ -11,6 +11,9 @@
 // @updateURL        https://github.com/personwritep/Blog_Table_Cell_Jump/raw/main/Blog_Table_Cell_Jump.user.js
 // @downloadURL        https://github.com/personwritep/Blog_Table_Cell_Jump/raw/main/Blog_Table_Cell_Jump.user.js
 // ==/UserScript==
+
+
+let listen=Symbol();
 
 
 let cursor=0; //「0」:セルの末尾　「1」:セルの先頭
@@ -27,11 +30,35 @@ function catch_key(){
         let editor_iframe=document.querySelector('.cke_wysiwyg_frame');
         let iframe_doc=editor_iframe.contentWindow.document;
 
+        if(!iframe_doc[listen]){
+            iframe_doc.addEventListener('keydown', check_key);
+            iframe_doc[listen]=true; }
 
-        iframe_doc.addEventListener('keydown', function(event){
+
+        let gate=0;
+        function check_key(event){
             if(!(event.ctrlKey || event.shiftKey || event.altKey || event.metaKey)){
                 let table=is_table();
                 if(table){
+                    if(event.keyCode==19){
+                        gate=1; } //「Pause」キー入力
+
+                    if(event.keyCode==37){ //「Pause」➔「⇦」
+                        if(gate==1){
+                            event.preventDefault();
+                            cursor=1;
+                            alert("◀️　文字列の先頭へジャンプ")
+                            gate=-1; }}
+                    if(event.keyCode==39){ //「Pause」➔「⇨」
+                        if(gate==1){
+                            event.preventDefault();
+                            cursor=0;
+                            alert("　 文字列の末尾へジャンプ　▶️")
+                            gate=-1; }}
+
+                    if(event.keyCode !=19){ gate=-1; }
+
+
                     if(event.keyCode==38){ //「⇧」
                         event.preventDefault();
                         event.stopImmediatePropagation();
@@ -41,9 +68,8 @@ function catch_key(){
                         event.stopImmediatePropagation();
                         go(table, 1); }}
 
-                is_locked();
+            }} // check_key()
 
-            }});
 
 
         function is_table(){
@@ -56,13 +82,6 @@ function catch_key(){
                     if(table_elm){
                         return table_elm; }}}}
 
-
-        function is_locked(){
-            let locked=event.getModifierState('ScrollLock');
-            if(locked){
-                cursor=1; }
-            else{
-                cursor=0; }}
 
 
         function go(table, n){
@@ -127,4 +146,5 @@ function catch_key(){
         } // get_now_pos(table)
 
     }
+
 } // catch_key()
