@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        Blog Table ⭐ Cell Jump
 // @namespace        http://tampermonkey.net/
-// @version        0.6
+// @version        0.7
 // @description        「⇧」「⇩」キーで「table」内のキャレットのセル移動を可能にする
 // @author        Ameba Blog User
 // @match        https://blog.ameba.jp/ucs/entry/srventryinsertinput.do*
@@ -17,6 +17,7 @@ let listen=Symbol();
 
 
 let cursor=0; //「0」:セルの末尾　「1」:セルの先頭
+set_allow();
 
 
 let target=document.getElementById('cke_1_contents'); // 監視 target
@@ -47,13 +48,13 @@ function catch_key(){
                         if(gate==1){
                             event.preventDefault();
                             cursor=1;
-                            alert("◀️　文字列の先頭へジャンプ")
+                            set_allow(cursor);
                             gate=-1; }}
                     if(event.keyCode==39){ //「Pause」➔「⇨」
                         if(gate==1){
                             event.preventDefault();
                             cursor=0;
-                            alert("　 文字列の末尾へジャンプ　▶️")
+                            set_allow(cursor);
                             gate=-1; }}
 
                     if(event.keyCode !=19){ gate=-1; }
@@ -86,9 +87,14 @@ function catch_key(){
 
         function go(table, n){
             let td_all=table.querySelectorAll('td');
-            let col=table.querySelector('tr').querySelectorAll('td').length;
+            let col=table.rows[0]?.cells.length || 0; // 列数
 
-            let now_point=get_now_pos(table);
+            let cell=get_td();
+            if(!cell) return;
+
+            let now_tdp=cell.cellIndex
+            let now_trp=cell.parentElement.rowIndex
+            let now_point=col*now_trp + now_tdp;
 
             let el;
             if(n==0){
@@ -110,41 +116,70 @@ function catch_key(){
 
 
 
-        function get_now_pos(table){
-            let point=get_td();
-            if(point){
-                let now_tdp;
-                let now_trp;
+        function get_td(){
+            let selection=iframe_doc.getSelection();
+            if(!selection || selection.rangeCount===0) return null;
+            let range=selection.getRangeAt(0);
+            let container=range.startContainer;
 
-                let tr_p=point.closest('tr');
-                let tr_p_td=tr_p.querySelectorAll('td');
-                for(let k=0; k<tr_p_td.length; k++){
-                    if(tr_p_td[k]==point){
-                        now_tdp=k; break; }}
+            let point;
+            if(container.nodeType==1){
+                point=container.closest('td'); }
+            else{
+                point=container.parentElement.closest('td'); }
+            return point;
 
-                let tr_all=table.querySelectorAll('tr');
-                for(let k=0; k<tr_all.length; k++){
-                    if(tr_all[k]==tr_p){
-                        now_trp=k; break; }}
-
-                return tr_p_td.length*now_trp + now_tdp; }
+        } // get_td()
 
 
-            function get_td(){
-                let selection=iframe_doc.getSelection();
-                if(selection.rangeCount>0){
-                    let point;
-                    let range=selection.getRangeAt(0);
-                    let container=range.startContainer;
-                    if(container.nodeType==1){
-                        point=container.closest('td'); }
-                    else{
-                        point=container.parentElement.closest('td'); }
 
-                    return point; }}
+        function set_allow(n){
+            let cell=get_td();
+            if(!cell) return;
 
-        } // get_now_pos(table)
+            let iframeRect=editor_iframe.getBoundingClientRect();
+            let rect=cell.getBoundingClientRect();
+            let arrow_top=iframeRect.top + rect.top - 25;
+            let arrow_left=iframeRect.left + rect.left + 4;
+
+            let j_arrow=document.querySelector('.j_arrow');
+            if(j_arrow){
+                if(n==0){
+                    j_arrow.classList.remove('left'); }
+                else{
+                    j_arrow.classList.add('left'); }
+
+                j_arrow.style.top=arrow_top+'px';
+                j_arrow.style.left=arrow_left+'px';
+
+                setTimeout(()=>{
+                    j_arrow.style.top='-30px';
+                }, 2000); }
+
+        } // set_allow()
+
+
 
     }
 
 } // catch_key()
+
+
+
+function set_allow(){
+    let disp=
+        '<div class="j_arrow">'+
+        '<span class="left">◀</span><span class="right">▶</span>'+
+        '</div>'+
+        '<style>'+
+        '.j_arrow { position: fixed; top: -30px; left: 0; z-index: 200; '+
+        'width: 32px; height: 18px; text-align: center; background: #000000a0; '+
+        'border-radius: 3px; } '+
+        '.j_arrow span { font: normal 16px/20px Meiryo; color: #fff; } '+
+        '.j_arrow .left { display: none; } .j_arrow .right { display: block; } '+
+        '.j_arrow.left .left { display: block; } .j_arrow.left .right { display: none; } '+
+        '</style>';
+
+    document.querySelector('.j_arrow') ? null : document.body.insertAdjacentHTML('beforeend', disp);
+
+} // set_allow()
